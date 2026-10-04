@@ -121,7 +121,7 @@ footer a{color:var(--rouge);font-weight:700;text-decoration:none}
     <div class="defis" id="defis"></div>
   </section>
 
-  <p class="note">Les sorties viennent du groupe Strava de la section. Strava ne transmet pas leur date : chaque sortie est datée du jour où elle a été relevée (quatre relevés par jour). Pour compter une sortie en vélotaf, mettez le mot « vélotaf » dans son titre Strava.</p>
+  <p class="note">Les sorties viennent du groupe Strava de la section et sont relevées à la main, en général une fois par semaine. La discipline est déduite du titre de la sortie : gardez ou ajoutez les mots « VTT », « gravel » ou « vélotaf » dans le titre pour être classé au bon endroit. Sans ces mots, la sortie compte en route.</p>
 
   <footer>
     <div class="logo">CA LANGUEDOC VÉLO<small>ROUTE · VTT · GRAVEL · TRIATHLON</small></div>
@@ -130,31 +130,30 @@ footer a{color:var(--rouge);font-weight:700;text-decoration:none}
 </div>
 
 <script>
-const DISC = {Ride:"Route", EBikeRide:"Route", MountainBikeRide:"VTT", EMountainBikeRide:"VTT",
-  GravelRide:"Gravel", VirtualRide:"Home trainer"};
 const COLS = [
   {id:"km", nom:"Km", dec:0, val:r=>r.km},
   {id:"deniv", nom:"Dénivelé (m)", dec:0, val:r=>r.deniv},
   {id:"h", nom:"Heures", dec:1, val:r=>r.h},
   {id:"vit", nom:"Vitesse (km/h)", dec:1, val:r=>r.h>0?r.km/r.h:0},
-  {id:"n", nom:"Sorties", dec:0, val:r=>r.n}
+  {id:"n", nom:"Sorties", dec:0, val:r=>r.n},
+  {id:"long", nom:"Plus longue (km)", dec:0, val:r=>r.long}
 ];
+const ORDRE=["Route","VTT","Gravel","Vélotaf","VAE","Home trainer"];
 let acts=[], adherents=new Set();
 const etat={disc:"Toutes", periode:"annee", tri:"km", sens:-1, q:"", ouverts:new Set()};
 const $=id=>document.getElementById(id);
 const el=(t,c,x)=>{const e=document.createElement(t); if(c) e.className=c; if(x!==undefined) e.textContent=x; return e;};
 const fmt=(v,d)=>v.toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d});
 const jours=n=>new Date(Date.now()-n*864e5).toISOString().slice(0,10);
-const simple=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+const simple=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 const semaine=c=>{const d=new Date(c+"T12:00:00Z");const j=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-j+3);
   const a=new Date(Date.UTC(d.getUTCFullYear(),0,4));return d.getUTCFullYear()+"-"+(1+Math.round((d-a)/6048e5));};
 
 function cumul(liste){
   const m=new Map();
   for(const a of liste){
-    let r=m.get(a.k); if(!r){r={k:a.k,p:a.p,km:0,deniv:0,h:0,n:0,discs:new Set(),sem:new Set(),parDisc:{}};m.set(a.k,r);}
-    r.p=a.p; r.km+=a.d; r.deniv+=a.e; r.h+=a.m/3600; r.n++; r.discs.add(a.disc);
-    if(!a.i) r.sem.add(semaine(a.c));
+    let r=m.get(a.k); if(!r){r={k:a.k,p:a.p,km:0,deniv:0,h:0,n:0,long:0,discs:new Set(),sem:new Set(),parDisc:{}};m.set(a.k,r);}
+    r.p=a.p; r.km+=a.d; r.deniv+=a.e; r.h+=a.m/3600; r.n++; r.long=Math.max(r.long,a.d); r.discs.add(a.disc); r.sem.add(semaine(a.c));
     r.parDisc[a.disc]=(r.parDisc[a.disc]||0)+a.d;
   }
   return [...m.values()];
@@ -166,13 +165,14 @@ function dansPeriode(a,p){
   return true;
 }
 const cherche=r=>!etat.q||simple(r.p).includes(simple(etat.q));
+const sorties=n=>n+(n>1?" sorties":" sortie");
 
 function chiffres(){
   const l=acts.filter(a=>dansPeriode(a,etat.periode));
-  const t=[[new Set(l.map(a=>a.k)).size,0,"Cyclistes"],[l.reduce((s,a)=>s+a.d,0),0,"Kilomètres"],
-    [l.reduce((s,a)=>s+a.e,0),0,"Mètres de dénivelé"],[l.reduce((s,a)=>s+a.m/3600,0),0,"Heures de selle"]];
+  const t=[[new Set(l.map(a=>a.k)).size,"Cyclistes"],[l.reduce((s,a)=>s+a.d,0),"Kilomètres"],
+    [l.reduce((s,a)=>s+a.e,0),"Mètres de dénivelé"],[l.reduce((s,a)=>s+a.m/3600,0),"Heures de selle"]];
   const z=$("chiffres"); z.textContent="";
-  for(const [v,d,n] of t){const c=el("div"); c.append(el("b","",fmt(v,d)),el("span","",n)); z.append(c);}
+  for(const [v,n] of t){const c=el("div"); c.append(el("b","",fmt(v,0)),el("span","",n)); z.append(c);}
 }
 function classement(){
   const liste=acts.filter(a=>dansPeriode(a,etat.periode)&&(etat.disc==="Toutes"||a.disc===etat.disc));
@@ -206,23 +206,23 @@ function defis(){
   const vit={}; for(const a of an){const v=vit[a.disc]||(vit[a.disc]={d:0,h:0});v.d+=a.d;v.h+=a.m/3600;}
   const vr=vit.Route&&vit.Route.h?vit.Route.d/vit.Route.h:null, coef={};
   for(const k in vit){const v=vit[k].h?vit[k].d/vit[k].h:0;coef[k]=vr&&v?vr/v:1;}
-  const coefTxt=Object.keys(coef).map(k=>k+" × "+fmt(coef[k],2)).join(", ");
-  const r28=base.filter(a=>!a.i&&a.c>=jours(28)), p28=base.filter(a=>!a.i&&a.c<jours(28)&&a.c>=jours(56));
+  const coefTxt=ORDRE.filter(k=>coef[k]).map(k=>k+" × "+fmt(coef[k],2)).join(", ");
+  const r28=base.filter(a=>a.c>=jours(28)), p28=base.filter(a=>a.c<jours(28)&&a.c>=jours(56));
   const avant=new Map(cumul(p28).map(r=>[r.k,r.h]));
   const liste=[
     {t:"Le Forçat",c:"var(--rouge)",r:"Heures de selle cumulées. Une heure de VTT vaut une heure de route.",u:"h",d:1,
-     x:c.map(r=>({k:r.k,p:r.p,v:r.h,sous:r.n+" sorties"}))},
+     x:c.map(r=>({p:r.p,v:r.h,sous:sorties(r.n)}))},
     {t:"Le Métronome",c:"var(--vert)",r:"Nombre de semaines avec au moins une sortie.",u:"sem.",d:0,
-     x:c.map(r=>({k:r.k,p:r.p,v:r.sem.size,sous:r.n+" sorties"}))},
+     x:c.map(r=>({p:r.p,v:r.sem.size,sous:sorties(r.n)}))},
     {t:"Le Chamois",c:"var(--ciel)",r:"Mètres de dénivelé gagnés par heure de selle, à partir de 5 heures roulées.",u:"m/h",d:0,
-     x:c.filter(r=>r.h>=5).map(r=>({k:r.k,p:r.p,v:r.deniv/r.h,sous:fmt(r.deniv,0)+" m en "+fmt(r.h,1)+" h"}))},
+     x:c.filter(r=>r.h>=5).map(r=>({p:r.p,v:r.deniv/r.h,sous:fmt(r.deniv,0)+" m en "+fmt(r.h,1)+" h"}))},
     {t:"Km équivalent route",c:"var(--rouge)",r:"Kilomètres pondérés par la difficulté de la discipline. Coefficients du moment : "+(coefTxt||"en attente de sorties")+".",u:"km",d:0,
-     x:c.map(r=>({k:r.k,p:r.p,v:Object.keys(r.parDisc).reduce((s,k)=>s+r.parDisc[k]*(coef[k]||1),0),sous:fmt(r.km,0)+" km réels"}))},
+     x:c.map(r=>({p:r.p,v:Object.keys(r.parDisc).reduce((s,k)=>s+r.parDisc[k]*(coef[k]||1),0),sous:fmt(r.km,0)+" km réels"}))},
     {t:"Le Couteau suisse",c:"var(--vert)",r:"Nombre de disciplines pratiquées. À égalité, les heures départagent.",u:"disc.",d:0,
-     x:c.map(r=>({k:r.k,p:r.p,v:r.discs.size,h:r.h,sous:[...r.discs].join(", ")})).sort((a,b)=>b.h-a.h)},
+     x:c.map(r=>({p:r.p,v:r.discs.size,h:r.h,sous:ORDRE.filter(k=>r.discs.has(k)).join(", ")})).sort((a,b)=>b.h-a.h)},
     {t:"La Fusée",c:"var(--ciel)",r:"Progression des heures roulées sur 28 jours par rapport aux 28 jours précédents (au moins 4 heures avant). Indépendant de la période choisie.",u:"%",d:0,
      vide:"Il faut 8 semaines de relevés pour ce challenge.",
-     x:cumul(r28).filter(r=>(avant.get(r.k)||0)>=4).map(r=>({k:r.k,p:r.p,v:100*(r.h/avant.get(r.k)-1),sous:fmt(avant.get(r.k),1)+" h → "+fmt(r.h,1)+" h"}))}
+     x:cumul(r28).filter(r=>(avant.get(r.k)||0)>=4).map(r=>({p:r.p,v:100*(r.h/avant.get(r.k)-1),sous:fmt(avant.get(r.k),1)+" h → "+fmt(r.h,1)+" h"}))}
   ];
   const zone=$("defis"); zone.textContent="";
   for(const d of liste){
@@ -261,9 +261,8 @@ $("tab-challenges").onclick=()=>{location.hash="challenges";onglet("challenges")
 $("periode").onchange=e=>{etat.periode=e.target.value;maj();};
 $("recherche").oninput=e=>{etat.q=e.target.value.trim();classement();defis();};
 
-fetch("data/activities.json",{cache:"no-store"}).then(r=>r.ok?r.json():{activites:[]}).catch(()=>({activites:[]})).then(data=>{
-  acts=(data.activites||[]).map(a=>Object.assign({},a,{k:a.k||a.p,disc:a.v?"Vélotaf":DISC[a.t]})).filter(a=>a.disc);
-  adherents=new Set(data.adherents||[]);
+fetch("data/activities.json",{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({})).then(data=>{
+  acts=data.activites||[]; adherents=new Set(data.adherents||[]);
   $("maj").textContent=data.maj?"Relevé du "+data.maj.split("-").reverse().join("/"):"Aucun relevé pour l'instant";
   const tete=$("entetes"); tete.append(el("th","","#"),el("th","","Cycliste"));
   for(const c of COLS){
@@ -272,8 +271,7 @@ fetch("data/activities.json",{cache:"no-store"}).then(r=>r.ok?r.json():{activite
     th.onclick=tri; th.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tri();}};
     tete.append(th);
   }
-  const noms=["Toutes","Route","VTT","Gravel","Vélotaf","Home trainer"].filter(d=>d!=="Home trainer"||acts.some(a=>a.disc===d));
-  for(const n of noms){
+  for(const n of ["Toutes"].concat(ORDRE.filter(d=>acts.some(a=>a.disc===d)))){
     const b=el("button","puce",n); b.type="button"; b.dataset.v=n; b.onclick=()=>{etat.disc=n;maj();}; $("disciplines").append(b);
   }
   maj(); onglet(location.hash==="#challenges"?"challenges":"");
