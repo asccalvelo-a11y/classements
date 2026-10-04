@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Classements ASCCAL Cyclisme</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Mise en page : une colonne etroite facon feuille de classement de course ; onglets, filtres, tableau. */
+:root{
+  --fond:#f3f4f1; --carte:#ffffff; --encre:#1b2420; --doux:#5d6a63; --trait:#d9ddd6;
+  --accent:#0b6b4a; --accent-doux:#dcece4; --or:#c99a06;
+  --titre:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --texte:"Barlow","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --fond:#131816; --carte:#1c2320; --encre:#e9eeea; --doux:#9aa8a0; --trait:#2e3833;
+  --accent:#4fc497; --accent-doux:#1f3a30; --or:#e3b93a; color-scheme:dark;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fond);color:var(--encre);font:16px/1.45 var(--texte)}
+.page{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:24px 48px;display:flex;flex-direction:column;gap:20px}
+h1{font:700 2.1rem/1 var(--titre);letter-spacing:.01em;text-transform:uppercase;margin:0;text-wrap:balance}
+.maj{color:var(--doux);font-size:.9rem;margin:6px 0 0}
+.onglets{display:flex;gap:4px;border-bottom:2px solid var(--trait)}
+.onglets button{font:600 1.15rem var(--titre);text-transform:uppercase;letter-spacing:.04em;background:none;border:0;
+  color:var(--doux);padding:10px 14px;margin-bottom:-2px;border-bottom:2px solid transparent;cursor:pointer}
+.onglets button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.filtres{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.puce{font:500 .92rem var(--texte);border:1px solid var(--trait);background:var(--carte);color:var(--encre);
+  border-radius:999px;padding:6px 14px;cursor:pointer}
+.puce[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--carte)}
+select{font:500 .92rem var(--texte);padding:6px 10px;border-radius:8px;border:1px solid var(--trait);background:var(--carte);color:var(--encre)}
+button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.etiquette{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--doux);width:100%}
+.tableau{background:var(--carte);border:1px solid var(--trait);border-radius:10px;overflow:hidden}
+.ligne{display:grid;grid-template-columns:2.4rem minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--trait)}
+.ligne:first-child{border-top:0}
+.rang{font:700 1.25rem var(--titre);color:var(--doux);text-align:center}
+.ligne.podium .rang{color:var(--or)}
+.nom{font-weight:600;overflow-wrap:anywhere}
+.sous{color:var(--doux);font-size:.82rem}
+.jauge{height:5px;border-radius:3px;background:var(--accent-doux);margin-top:5px}
+.jauge i{display:block;height:100%;border-radius:3px;background:var(--accent)}
+.valeur{font:700 1.35rem var(--titre);font-variant-numeric:tabular-nums;white-space:nowrap}
+.valeur small{font:500 .8rem var(--texte);color:var(--doux);margin-left:3px}
+.vide{padding:22px 14px;color:var(--doux)}
+.defis{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.defi h2{font:700 1.4rem/1.1 var(--titre);text-transform:uppercase;margin:0 0 4px}
+.defi p{margin:0 0 10px;color:var(--doux);font-size:.9rem}
+.note{color:var(--doux);font-size:.85rem;margin:0}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Classements ASCCAL Cyclisme</h1>
+    <p class="maj" id="maj">Chargement des sorties…</p>
+  </header>
+  <nav class="onglets" role="tablist">
+    <button role="tab" id="tab-classements" aria-selected="true">Classements</button>
+    <button role="tab" id="tab-challenges" aria-selected="false">Nos challenges</button>
+  </nav>
+
+  <section id="vue-classements">
+    <div class="page" style="padding:0">
+      <div class="filtres" id="mesures"><span class="etiquette">Classement</span></div>
+      <div class="filtres" id="disciplines"><span class="etiquette">Discipline</span></div>
+      <div class="filtres"><span class="etiquette">Période</span>
+        <select id="periode" aria-label="Période">
+          <option value="annee">Année en cours</option>
+          <option value="30j">30 derniers jours</option>
+          <option value="tout">Depuis le début</option>
+        </select>
+      </div>
+      <div class="tableau" id="classement"></div>
+    </div>
+  </section>
+
+  <section id="vue-challenges" hidden>
+    <div class="defis" id="defis"></div>
+  </section>
+
+  <p class="note">Les sorties viennent du groupe Strava de la section. Strava ne transmet pas leur date : chaque sortie est datée du jour où elle a été relevée (quatre relevés par jour). Pour compter une sortie en vélotaf, mettez le mot « vélotaf » dans son titre Strava.</p>
+</div>
+
+<script>
+const DISC = {Ride:"Route", EBikeRide:"Route", MountainBikeRide:"VTT", EMountainBikeRide:"VTT",
+  GravelRide:"Gravel", VirtualRide:"Home trainer"};
+const MESURES = [
+  {id:"km", nom:"Kilomètres", unite:"km", val:r=>r.km, dec:0},
+  {id:"deniv", nom:"Dénivelé", unite:"m", val:r=>r.deniv, dec:0},
+  {id:"heures", nom:"Heures", unite:"h", val:r=>r.h, dec:1},
+  {id:"vitesse", nom:"Vitesse", unite:"km/h", val:r=>r.n>=3&&r.h>0?r.km/r.h:null, dec:1,
+   note:"Vitesse moyenne, à partir de 3 sorties. À lire discipline par discipline."}
+];
+let acts=[], etat={mesure:"km", disc:"Toutes", periode:"annee"};
+const $=id=>document.getElementById(id);
+const fmt=(v,d)=>v.toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const jours=n=>new Date(Date.now()-n*864e5).toISOString().slice(0,10);
+const semaine=c=>{const d=new Date(c+"T12:00:00Z");const j=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-j+3);
+  const a=new Date(Date.UTC(d.getUTCFullYear(),0,4));return d.getUTCFullYear()+"-"+(1+Math.round((d-a)/6048e5));};
+
+function cumul(liste){
+  const m=new Map();
+  for(const a of liste){
+    let r=m.get(a.p); if(!r){r={p:a.p,km:0,deniv:0,h:0,n:0,discs:new Set(),sem:new Set(),parDisc:{}};m.set(a.p,r);}
+    r.km+=a.d; r.deniv+=a.e; r.h+=a.m/3600; r.n++; r.discs.add(a.disc);
+    if(!a.i) r.sem.add(semaine(a.c));
+    r.parDisc[a.disc]=(r.parDisc[a.disc]||0)+a.d;
+  }
+  return [...m.values()];
+}
+function dansPeriode(a,p){
+  if(p==="annee") return a.c.slice(0,4)===String(new Date().getFullYear());
+  if(p==="30j") return a.c>=jours(30);
+  return true;
+}
+function lignes(cible,rangs,unite,dec,vide){
+  cible.textContent="";
+  if(!rangs.length){const v=document.createElement("div");v.className="vide";v.textContent=vide;cible.append(v);return;}
+  const max=Math.max(...rangs.map(r=>r.v))||1;
+  rangs.forEach((r,i)=>{
+    const l=document.createElement("div"); l.className="ligne"+(i<3?" podium":"");
+    const rg=document.createElement("div"); rg.className="rang"; rg.textContent=i+1;
+    const mil=document.createElement("div");
+    const nom=document.createElement("div"); nom.className="nom"; nom.textContent=r.p;
+    const sous=document.createElement("div"); sous.className="sous"; sous.textContent=r.sous;
+    const j=document.createElement("div"); j.className="jauge";
+    const b=document.createElement("i"); b.style.width=Math.max(2,100*r.v/max)+"%"; j.append(b);
+    mil.append(nom,sous,j);
+    const val=document.createElement("div"); val.className="valeur"; val.textContent=fmt(r.v,dec);
+    const u=document.createElement("small"); u.textContent=unite; val.append(u);
+    l.append(rg,mil,val); cible.append(l);
+  });
+}
+function classement(){
+  const m=MESURES.find(x=>x.id===etat.mesure);
+  const liste=acts.filter(a=>dansPeriode(a,etat.periode)&&(etat.disc==="Toutes"||a.disc===etat.disc));
+  const rangs=cumul(liste).map(r=>({p:r.p,v:m.val(r),sous:r.n+(r.n>1?" sorties":" sortie")}))
+    .filter(r=>r.v!==null&&r.v>0).sort((a,b)=>b.v-a.v);
+  lignes($("classement"),rangs,m.unite,m.dec,
+    acts.length?"Aucune sortie pour ce filtre.":"Le premier relevé n'a pas encore eu lieu.");
+}
+function defis(){
+  const an=acts.filter(a=>dansPeriode(a,"annee"));
+  const c=cumul(an);
+  // Coefficients km equivalent route : vitesse moyenne route du club / vitesse moyenne de la discipline
+  const vit={}; for(const a of an){const v=vit[a.disc]||(vit[a.disc]={d:0,h:0});v.d+=a.d;v.h+=a.m/3600;}
+  const vr=vit.Route&&vit.Route.h?vit.Route.d/vit.Route.h:null, coef={};
+  for(const k in vit){const v=vit[k].h?vit[k].d/vit[k].h:0;coef[k]=vr&&v?vr/v:1;}
+  const coefTxt=Object.keys(coef).map(k=>k+" × "+fmt(coef[k],2)).join(", ");
+  const r28=acts.filter(a=>!a.i&&a.c>=jours(28)), p28=acts.filter(a=>!a.i&&a.c<jours(28)&&a.c>=jours(56));
+  const avant=new Map(cumul(p28).map(r=>[r.p,r.h]));
+  const liste=[
+    {t:"Le Forçat",r:"Heures de selle cumulées sur l'année. Une heure de VTT vaut une heure de route.",u:"h",d:1,
+     x:c.map(r=>({p:r.p,v:r.h,sous:r.n+" sorties"}))},
+    {t:"Le Métronome",r:"Nombre de semaines de l'année avec au moins une sortie.",u:"sem.",d:0,
+     x:c.map(r=>({p:r.p,v:r.sem.size,sous:r.n+" sorties"}))},
+    {t:"Le Chamois",r:"Mètres de dénivelé gagnés par heure de selle, à partir de 5 heures roulées.",u:"m/h",d:0,
+     x:c.filter(r=>r.h>=5).map(r=>({p:r.p,v:r.deniv/r.h,sous:fmt(r.deniv,0)+" m en "+fmt(r.h,1)+" h"}))},
+    {t:"Km équivalent route",r:"Kilomètres pondérés par la difficulté de la discipline. Coefficients du moment : "+(coefTxt||"en attente de données")+".",u:"km",d:0,
+     x:c.map(r=>({p:r.p,v:Object.keys(r.parDisc).reduce((s,k)=>s+r.parDisc[k]*(coef[k]||1),0),sous:fmt(r.km,0)+" km réels"}))},
+    {t:"Le Couteau suisse",r:"Nombre de disciplines pratiquées dans l'année. À égalité, les heures départagent.",u:"disc.",d:0,
+     x:c.map(r=>({p:r.p,v:r.discs.size,h:r.h,sous:[...r.discs].join(", ")})).sort((a,b)=>b.h-a.h)},
+    {t:"La Fusée",r:"Progression des heures roulées sur 28 jours par rapport aux 28 jours précédents (au moins 4 heures avant).",u:"%",d:0,
+     vide:"Il faut 8 semaines de relevés pour ce challenge.",
+     x:cumul(r28).filter(r=>(avant.get(r.p)||0)>=4).map(r=>({p:r.p,v:100*(r.h/avant.get(r.p)-1),sous:fmt(avant.get(r.p),1)+" h → "+fmt(r.h,1)+" h"}))}
+  ];
+  const zone=$("defis"); zone.textContent="";
+  for(const d of liste){
+    const art=document.createElement("article"); art.className="defi";
+    const h=document.createElement("h2"); h.textContent=d.t;
+    const p=document.createElement("p"); p.textContent=d.r;
+    const tab=document.createElement("div"); tab.className="tableau";
+    lignes(tab,d.x.filter(r=>r.v>0).sort((a,b)=>b.v-a.v).slice(0,5),d.u,d.d,d.vide||"Pas encore de sorties relevées.");
+    art.append(h,p,tab); zone.append(art);
+  }
+}
+function puces(zone,noms,cle){
+  for(const n of noms){
+    const b=document.createElement("button"); b.className="puce"; b.type="button";
+    b.textContent=n.nom||n; b.dataset.v=n.id||n;
+    b.onclick=()=>{etat[cle]=b.dataset.v;maj();};
+    zone.append(b);
+  }
+}
+function maj(){
+  document.querySelectorAll("#mesures .puce").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===etat.mesure));
+  document.querySelectorAll("#disciplines .puce").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===etat.disc));
+  classement();
+}
+function onglet(nom){
+  const ch=nom==="challenges";
+  $("vue-classements").hidden=ch; $("vue-challenges").hidden=!ch;
+  $("tab-classements").setAttribute("aria-selected",!ch); $("tab-challenges").setAttribute("aria-selected",ch);
+}
+$("tab-classements").onclick=()=>{location.hash="";onglet("");};
+$("tab-challenges").onclick=()=>{location.hash="challenges";onglet("challenges");};
+$("periode").onchange=e=>{etat.periode=e.target.value;maj();};
+
+fetch("data/activities.json",{cache:"no-store"}).then(r=>r.ok?r.json():{activites:[]}).catch(()=>({activites:[]})).then(data=>{
+  acts=(data.activites||[]).map(a=>Object.assign({},a,{disc:a.v?"Vélotaf":DISC[a.t]})).filter(a=>a.disc);
+  $("maj").textContent=data.maj?"Dernier relevé le "+data.maj.split("-").reverse().join("/")+" · "+acts.length+" sorties à vélo":"Aucun relevé pour l'instant.";
+  const presentes=["Route","VTT","Gravel","Vélotaf","Home trainer"].filter(d=>d!=="Home trainer"||acts.some(a=>a.disc===d));
+  puces($("mesures"),MESURES,"mesure"); puces($("disciplines"),["Toutes"].concat(presentes),"disc");
+  maj(); defis(); onglet(location.hash==="#challenges"?"challenges":"");
+});
+</script>
+</body>
+</html>
