@@ -262,7 +262,8 @@ $("periode").onchange=e=>{etat.periode=e.target.value;maj();};
 $("recherche").oninput=e=>{etat.q=e.target.value.trim();classement();defis();};
 
 fetch("data/activities.json",{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({})).then(data=>{
-  acts=data.activites||[]; adherents=new Set(data.adherents||[]);
+  const noms=data.noms||{};
+  acts=(data.activites||[]).map(a=>noms[a.k]?Object.assign({},a,{p:noms[a.k]}):a); adherents=new Set(data.adherents||[]);
   $("maj").textContent=data.maj?"Relevé du "+data.maj.split("-").reverse().join("/"):"Aucun relevé pour l'instant";
   const tete=$("entetes"); tete.append(el("th","","#"),el("th","","Cycliste"));
   for(const c of COLS){
