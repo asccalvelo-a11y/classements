@@ -2,7 +2,7 @@
 """Collecte des sorties du club Strava ASCCAL -> data/activities.json
 Le flux club ne fournit ni date ni identifiant : chaque sortie nouvelle est
 datee du jour de collecte et reconnue par une empreinte anonyme."""
-import hashlib, json, os, re, sys, unicodedata, urllib.parse, urllib.request
+import hashlib, json, os, re, sys, unicodedata, urllib.error, urllib.parse, urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,12 +18,15 @@ DATA = Path("data/activities.json")
 VELOTAF = re.compile(r"v[ée]lo\s*-?taf|commute|trajet|boulot|domicile", re.I)
 
 
-def call(url, data=None, token=None):
+def call(etape, url, data=None, token=None):
     req = urllib.request.Request(url, data=urllib.parse.urlencode(data).encode() if data else None)
     if token:
         req.add_header("Authorization", "Bearer " + token)
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.load(r)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:  # la reponse d'erreur de Strava ne contient pas de secret
+        raise RuntimeError("%s : HTTP %s %s" % (etape, e.code, e.read().decode("utf-8", "replace")[:300]))
 
 
 def h(text, n):
@@ -37,14 +40,25 @@ def cle(name):
 
 
 def main():
-    tok = call("https://www.strava.com/oauth/token", {
+    tok = call("jeton", "https://www.strava.com/api/v3/oauth/token", {
         "client_id": CID, "client_secret": SECRET,
         "grant_type": "refresh_token", "refresh_token": REFRESH})
     if tok.get("refresh_token") and tok["refresh_token"] != REFRESH:
         print("ATTENTION : Strava a emis un nouveau jeton d'actualisation ; "
               "mettre a jour le secret STRAVA_REFRESH_TOKEN.")
-    feed = call("https://www.strava.com/api/v3/clubs/%s/activities?per_page=200" % CLUB_ID,
-                token=tok["access_token"])
+    acces = tok["access_token"]
+    try:
+        feed = call("sorties du club", "https://www.strava.com/api/v3/clubs/%s/activities?per_page=200" % CLUB_ID,
+                    token=acces)
+    except RuntimeError as exc:
+        print(exc)
+        try:  # diagnostic : de quels clubs ce compte Strava est-il membre ?
+            clubs = call("clubs du compte", "https://www.strava.com/api/v3/athlete/clubs?per_page=100", token=acces)
+            print("Clubs visibles par ce compte :", ", ".join("%s (%s)" % (c.get("name"), c.get("id")) for c in clubs) or "aucun")
+        except RuntimeError as exc2:
+            print(exc2)
+        print("Droits du jeton :", tok.get("scope", "non indiques"))
+        sys.exit(1)
     old = json.loads(DATA.read_text()) if DATA.exists() else {"activites": []}
     acts = old["activites"]
     seen = {a["s"] for a in acts}
@@ -85,5 +99,5 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as exc:  # ne jamais afficher de secret
-        print("Echec de la collecte :", type(exc).__name__, getattr(exc, "code", ""))
+        print("Echec de la collecte :", exc if isinstance(exc, RuntimeError) else type(exc).__name__)
         sys.exit(1)
