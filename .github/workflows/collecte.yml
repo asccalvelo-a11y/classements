@@ -17,6 +17,8 @@ jobs:
           STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
           STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
           PSEUDOS: ${{ secrets.PSEUDOS }}
+          ADHERENTS: ${{ secrets.ADHERENTS }}
+          NOMS_STRAVA: ${{ vars.NOMS_STRAVA }}
         run: python3 collecte.py
       - name: Enregistrement
         run: |
