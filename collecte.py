@@ -2,7 +2,7 @@
 """Collecte des sorties du club Strava ASCCAL -> data/activities.json
 Le flux club ne fournit ni date ni identifiant : chaque sortie nouvelle est
 datee du jour de collecte et reconnue par une empreinte anonyme."""
-import hashlib, json, os, re, sys, urllib.parse, urllib.request
+import hashlib, json, os, re, sys, unicodedata, urllib.parse, urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -10,7 +10,10 @@ CLUB_ID = os.environ.get("STRAVA_CLUB_ID", "241399")
 CID = os.environ["STRAVA_CLIENT_ID"]
 SECRET = os.environ["STRAVA_CLIENT_SECRET"]
 REFRESH = os.environ["STRAVA_REFRESH_TOKEN"]
+# Secrets facultatifs. PSEUDOS : {"Prenom N.": "nom affiche"}. ADHERENTS : ["Prenom N.", ...]
 PSEUDOS = json.loads(os.environ.get("PSEUDOS") or "{}")
+ADHERENTS = json.loads(os.environ.get("ADHERENTS") or "[]")
+NOMS_STRAVA = (os.environ.get("NOMS_STRAVA") or "").lower() == "oui"
 DATA = Path("data/activities.json")
 VELOTAF = re.compile(r"v[ée]lo\s*-?taf|commute|trajet|boulot|domicile", re.I)
 
@@ -27,6 +30,12 @@ def h(text, n):
     return hashlib.sha256((SECRET + "|" + text).encode()).hexdigest()[:n]
 
 
+def cle(name):
+    """Nom normalise (sans accents ni majuscules) pour rapprocher Strava et la liste des adherents."""
+    n = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    return " ".join(n.lower().replace(".", " ").split())
+
+
 def main():
     tok = call("https://www.strava.com/oauth/token", {
         "client_id": CID, "client_secret": SECRET,
@@ -40,6 +49,7 @@ def main():
     acts = old["activites"]
     seen = {a["s"] for a in acts}
     first = not acts
+    pseudos = {cle(k): v for k, v in PSEUDOS.items()}
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     added = 0
     for a in reversed(feed):  # du plus ancien au plus recent
@@ -54,7 +64,8 @@ def main():
         added += 1
         acts.append({
             "s": sig,
-            "p": PSEUDOS.get(name) or "Cycliste-" + h(name, 4),
+            "k": h(cle(name), 10),
+            "p": pseudos.get(cle(name)) or (name if NOMS_STRAVA else "Cycliste-" + h(cle(name), 4)),
             "t": a.get("sport_type") or a.get("type") or "?",
             "d": round(dist / 1000, 2),
             "m": int(mov),
@@ -64,7 +75,8 @@ def main():
             "i": first,
         })
     DATA.parent.mkdir(exist_ok=True)
-    DATA.write_text(json.dumps({"maj": today, "activites": acts},
+    adh = sorted({h(cle(n), 10) for n in ADHERENTS})
+    DATA.write_text(json.dumps({"maj": today, "adherents": adh, "activites": acts},
                                ensure_ascii=False, separators=(",", ":")))
     print("%d sorties dans le flux, %d nouvelles, %d au total" % (len(feed), added, len(acts)))
 
