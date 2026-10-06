@@ -16,10 +16,12 @@ DATE = re.compile(r"^(Aujourd'hui|Aujourd’hui|Today|Hier|Yesterday|(\d{1,2}) (
 
 def quand(ligne, ref):
     """Date d'une ligne du type « Hier à 09:57 · Garmin » ; None si ce n'est pas une ligne de date d'activite."""
-    if "·" not in ligne:
-        return None
-    m = DATE.match(ligne.strip())
+    ligne = ligne.strip()
+    m = DATE.match(ligne)
     if not m:
+        return None
+    # ligne de date d'une sortie : « date · appareil », ou la date seule (sortie sans appareil ni lieu)
+    if "·" not in ligne and not re.fullmatch(r".{0,40}?(\d{4}|hui|Hier|Today|Yesterday)( (à|at) \d{1,2}[:h]\d{2}( ?[AP]M)?)?", ligne):
         return None
     mot = m.group(1).lower()
     if mot.startswith(("aujourd", "today")):
