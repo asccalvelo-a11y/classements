@@ -26,6 +26,8 @@ body{margin:0;background:var(--fond);color:var(--encre);font:16px/1.45 var(--tex
 h1{font:800 clamp(2.6rem,9vw,4.6rem)/.92 var(--titre);text-transform:uppercase;color:var(--marine);margin:0;text-wrap:balance}
 .bande{display:flex;width:120px;height:7px;margin:14px 0 12px}
 .bande i{flex:1}.bande i:nth-child(1){background:var(--rouge)}.bande i:nth-child(2){background:var(--vert)}.bande i:nth-child(3){background:var(--ciel)}
+.pastille[hidden]{display:none}
+.pastille.claire{background:transparent;color:var(--rouge);box-shadow:inset 0 0 0 2px var(--rouge);margin-top:6px}
 .pastille{display:inline-block;background:var(--rouge);color:var(--sur-rouge);border-radius:999px;padding:6px 16px;
   font:700 .95rem var(--titre);letter-spacing:.08em;text-transform:uppercase}
 .chiffres{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--trait);border:1px solid var(--trait);border-radius:10px;overflow:hidden}
@@ -88,6 +90,7 @@ footer a{color:var(--rouge);font-weight:700;text-decoration:none}
     <h1>Les classements</h1>
     <div class="bande"><i></i><i></i><i></i></div>
     <span class="pastille" id="maj">Chargement des sorties…</span>
+    <span class="pastille claire" id="debut" hidden></span>
   </header>
 
   <div class="chiffres" id="chiffres"></div>
@@ -267,6 +270,7 @@ fetch("data/activities.json",{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch
   const noms=data.noms||{};
   acts=(data.activites||[]).map(a=>noms[a.k]?Object.assign({},a,{p:noms[a.k]}):a); adherents=new Set(data.adherents||[]);
   $("maj").textContent=data.maj?"Relevé du "+data.maj.split("-").reverse().join("/"):"Aucun relevé pour l'instant";
+  {const ds=acts.map(a=>a.c).filter(Boolean).sort(); if(ds.length){const b=$("debut"); b.textContent="Données depuis le "+ds[0].split("-").reverse().join("/"); b.hidden=false;}}
   const tete=$("entetes"); tete.append(el("th","","#"),el("th","","Cycliste"));
   for(const c of COLS){
     const th=el("th","",c.nom); th.dataset.id=c.id; th.tabIndex=0;
