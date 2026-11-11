@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Courses et randonnées vélo FSGT 2026 – Hérault et Gard | ASCCAL section cyclisme</title>
+<meta name="description" content="Calendrier 2026 des courses, cyclosportives, randonnées, VTT et gravel FSGT dans l'Hérault et le Gard (Montpellier, Béziers, Sète, Nîmes, Alès…), à filtrer par département et par catégorie.">
+<link rel="canonical" href="https://asccalvelo-a11y.github.io/classements/courses.html">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout : une colonne, barre de filtres collante, liste groupée par mois façon feuille de route */
+:root{
+  --bg:#f6f7f5; --surface:#ffffff; --fg:#1b2420; --muted:#5d6b64; --line:#dde3df;
+  --accent:#0f7a5c; --accent-soft:#e2f2ec; --past:#8a958f;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121816; --surface:#1a221f; --fg:#e7eeea; --muted:#9aa9a2; --line:#2b3632;
+  --accent:#4cc79d; --accent-soft:#183329; --past:#6f7c76; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121816; --surface:#1a221f; --fg:#e7eeea; --muted:#9aa9a2; --line:#2b3632;
+  --accent:#4cc79d; --accent-soft:#183329; --past:#6f7c76; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+header h1{font-family:var(--display);font-weight:700;font-size:clamp(2rem,6vw,2.8rem);line-height:1.05;margin:0;letter-spacing:.01em;text-wrap:balance}
+header p{color:var(--muted);margin:.4rem 0 0;max-width:62ch}
+.filters{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px;margin-top:18px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:10px}
+.filters label{display:flex;flex-direction:column;gap:4px;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;min-width:0}
+select,input{font:inherit;font-size:.95rem;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-width:0;width:100%;box-sizing:border-box}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 4px;color:var(--muted);font-size:.9rem}
+.bar strong{color:var(--fg);font-variant-numeric:tabular-nums}
+.toggle{display:flex;align-items:center;gap:6px;cursor:pointer}
+.toggle input{width:auto}
+button.reset{font:inherit;font-size:.85rem;background:none;border:0;color:var(--accent);cursor:pointer;padding:4px 0;text-decoration:underline}
+.month{font-family:var(--display);font-weight:600;font-size:1.25rem;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin:26px 0 8px}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+li{display:grid;grid-template-columns:64px 1fr;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;align-items:start}
+li.past{opacity:.62}
+.date{text-align:center;font-family:var(--display);line-height:1;border-right:1px solid var(--line);padding-right:12px}
+.date .d{font-size:1.9rem;font-weight:700;font-variant-numeric:tabular-nums}
+.date .w{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:3px}
+.info{min-width:0}
+.nom{font-weight:600;margin:0 0 4px;overflow-wrap:anywhere}
+.meta{display:flex;flex-wrap:wrap;gap:6px 12px;color:var(--muted);font-size:.88rem}
+.chip{display:inline-block;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:.76rem;border-radius:999px;padding:2px 9px}
+.chip.past{background:transparent;color:var(--past);border:1px solid var(--line)}
+.empty{color:var(--muted);padding:30px 0;text-align:center}
+@media (max-width:620px){.filters{grid-template-columns:1fr 1fr}.filters label.q{grid-column:1/-1}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Courses et randonnées FSGT 2026</h1>
+    <p>Les épreuves vélo du calendrier FSGT Hérault et Gard, ouvertes aux licenciés. Choisissez un département ou une catégorie pour trouver votre prochaine sortie.</p>
+  </header>
+
+  <div class="filters" role="search">
+    <label for="f-dep">Département<select id="f-dep"><option value="">Tous</option></select></label>
+    <label for="f-cat">Catégorie<select id="f-cat"><option value="">Toutes</option></select></label>
+    <label class="q" for="f-q">Rechercher<input id="f-q" type="search" placeholder="Lieu ou nom d'épreuve"></label>
+  </div>
+
+  <div class="bar">
+    <span><strong id="count">0</strong> épreuve(s)</span>
+    <span style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+      <label class="toggle" for="f-future"><input id="f-future" type="checkbox"> À venir seulement</label>
+      <button class="reset" id="reset" type="button">Effacer les filtres</button>
+    </span>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<script>
+const DATA = [{"date": "2026-01-18", "dep": "Gard (30)", "lieu": "Nîmes (Mas d'Escattes)", "cat": "VTT", "nom": "XC Nîmes Mas d'Escattes"}, {"date": "2026-02-01", "dep": "Gard (30)", "lieu": "Sommières", "cat": "VTT", "nom": "XC des Terres de Sommières"}, {"date": "2026-02-15", "dep": "Gard (30)", "lieu": "Pompignan", "cat": "Cyclosportive", "nom": "La Ronde du Piémont Cévenol"}, {"date": "2026-02-22", "dep": "Hérault (34)", "lieu": "Valflaunès", "cat": "Cyclosportive", "nom": "L'Hortus"}, {"date": "2026-03-08", "dep": "Gard (30)", "lieu": "Méjannes-lès-Alès", "cat": "Course sur route", "nom": "GP de Méjannes-lès-Alès"}, {"date": "2026-04-05", "dep": "Hérault (34)", "lieu": "Montagnac", "cat": "Cyclosportive", "nom": "La Montagnacoise"}, {"date": "2026-04-06", "dep": "Gard (30)", "lieu": "Codolet", "cat": "Course sur route", "nom": "Le Tour de Marcoule"}, {"date": "2026-04-12", "dep": "Hérault (34)", "lieu": "Saint-Jean-de-Védas", "cat": "Randonnée", "nom": "La Védasienne"}, {"date": "2026-04-12", "dep": "Gard (30)", "lieu": "Carnas", "cat": "Course sur route", "nom": "GP de Carnas"}, {"date": "2026-04-19", "dep": "Hérault (34)", "lieu": "Castries", "cat": "Randonnée", "nom": "Col du Lac"}, {"date": "2026-04-25", "dep": "Gard (30)", "lieu": "Cornillon", "cat": "Gravel", "nom": "Challenge Provence Occitane – 1re manche"}, {"date": "2026-04-26", "dep": "Gard (30)", "lieu": "Domessargues", "cat": "Course sur route", "nom": "GP de Domessargues"}, {"date": "2026-05-03", "dep": "Hérault (34)", "lieu": "Pignan", "cat": "Randonnée", "nom": "Rando mixte C4H2"}, {"date": "2026-05-03", "dep": "Gard (30)", "lieu": "Alès", "cat": "Course sur route", "nom": "Circuit minier"}, {"date": "2026-05-03", "dep": "Hérault (34)", "lieu": "Saint-Drézéry", "cat": "Randonnée", "nom": "La Santa"}, {"date": "2026-05-09", "dep": "Gard (30)", "lieu": "Alès (Pôle mécanique)", "cat": "Course sur route", "nom": "Course vélo FSGT Bike Festival"}, {"date": "2026-05-24", "dep": "Hérault (34)", "lieu": "Vailhauquès", "cat": "Randonnée", "nom": "Rando Vailhauquoise (Souvenir Yves Gauvrit : 66, 92 ou 126 km)"}, {"date": "2026-05-31", "dep": "Hérault (34)", "lieu": "Montpeyroux", "cat": "Randonnée", "nom": "Les Débiles du Baudille (Col du Vent par les 3 côtés, arrivée au pic Baudille)"}, {"date": "2026-06-07", "dep": "Gard (30)", "lieu": "Sernhac", "cat": "Course sur route", "nom": "GP de Sernhac"}, {"date": "2026-06-07", "dep": "Hérault (34)", "lieu": "Jacou", "cat": "Randonnée", "nom": "Randonnée des 3 Vallées"}, {"date": "2026-06-21", "dep": "Gard (30)", "lieu": "Quissac", "cat": "Randonnée", "nom": "La Quissacoise"}, {"date": "2026-07-14", "dep": "Hérault (34)", "lieu": "Boujan-sur-Libron", "cat": "Course sur route", "nom": "GP de Boujan"}, {"date": "2026-08-15", "dep": "Hérault (34)", "lieu": "Olargues", "cat": "Montée chronométrée", "nom": "Montée de Fontfroide"}, {"date": "2026-08-19", "dep": "Hérault (34)", "lieu": "Sète", "cat": "Course sur route", "nom": "Nocturne de Sète (20 h, 70 km, 50 tours)"}, {"date": "2026-08-22", "dep": "Hérault (34)", "lieu": "Graissessac", "cat": "Montée chronométrée", "nom": "Montée du col du Layrac"}, {"date": "2026-08-23", "dep": "Hérault (34)", "lieu": "Sète", "cat": "Randonnée", "nom": "Randonnée Saint-Louis (10, 50, 90 km + 60 km vélos vintage)"}, {"date": "2026-09-06", "dep": "Hérault (34)", "lieu": "Béziers", "cat": "Contre-la-montre", "nom": "CLM solo et duo de Béziers (27,3 km)"}, {"date": "2026-09-06", "dep": "Gard (30)", "lieu": "Saint-Théodorit", "cat": "VTT", "nom": "XC Saint-Théodorit"}, {"date": "2026-09-13", "dep": "Hérault (34)", "lieu": "Montpeyroux", "cat": "Montée chronométrée", "nom": "Montée du pic Baudille"}, {"date": "2026-09-20", "dep": "Hérault (34)", "lieu": "Sète", "cat": "Montée chronométrée", "nom": "Montée du mont Saint-Clair"}, {"date": "2026-09-27", "dep": "Gard (30)", "lieu": "Montclus", "cat": "Gravel", "nom": "Challenge Provence Occitane – 2e manche"}, {"date": "2026-09-27", "dep": "Hérault (34)", "lieu": "Montagnac", "cat": "Contre-la-montre", "nom": "CLM des Vendanges solo et duo (20 km)"}, {"date": "2026-10-03", "dep": "Gard (30)", "lieu": "Pont-Saint-Esprit", "cat": "Gravel", "nom": "Challenge Provence Occitane – 3e manche"}, {"date": "2026-10-04", "dep": "Hérault (34)", "lieu": "Pézenas", "cat": "Contre-la-montre", "nom": "CLM solo et duo (28 km)"}, {"date": "2026-10-17", "dep": "Gard (30)", "lieu": "Souvignargues", "cat": "Gravel", "nom": "2e GP Gravel de Souvignargues"}, {"date": "2026-10-25", "dep": "Hérault (34)", "lieu": "Cournonterral", "cat": "Montée chronométrée", "nom": "Chrono de la Taillade (1re ascension CLM, 2e mass start)"}, {"date": "2026-11-08", "dep": "Hérault (34)", "lieu": "Notre-Dame-de-Londres", "cat": "Randonnée", "nom": "Les mordus de l'Hortus"}, {"date": "2026-11-29", "dep": "Hérault (34)", "lieu": "Béziers (Montflourès)", "cat": "Cyclo-cross", "nom": "Cyclo-cross de Montflourès"}];
+const MOIS=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+const JOURS=["dim.","lun.","mar.","mer.","jeu.","ven.","sam."];
+const $=id=>document.getElementById(id);
+const today=new Date();today.setHours(0,0,0,0);
+const uniq=(k,order)=>{const s=[...new Set(DATA.map(x=>x[k]))];return order?s.sort(order):s.sort((a,b)=>a.localeCompare(b,'fr'));};
+const depOrder=(a,b)=>{const p=x=>/\((30|34)\)/.test(x)?0:1;return p(a)-p(b)||a.localeCompare(b,'fr');};
+uniq('dep',depOrder).forEach(v=>$('f-dep').add(new Option(v,v)));
+uniq('cat').forEach(v=>$('f-cat').add(new Option(v,v)));
+const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function save(){try{localStorage.setItem('fsgt-filtres',JSON.stringify({dep:$('f-dep').value,cat:$('f-cat').value,fut:$('f-future').checked}))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem('fsgt-filtres')||'{}');if(s.dep)$('f-dep').value=s.dep;if(s.cat)$('f-cat').value=s.cat;if(s.fut)$('f-future').checked=true;}catch(e){}}
+function render(){
+  const dep=$('f-dep').value,cat=$('f-cat').value,q=norm($('f-q').value.trim()),fut=$('f-future').checked;
+  const rows=DATA.filter(x=>(!dep||x.dep===dep)&&(!cat||x.cat===cat)&&(!q||norm(x.lieu+' '+x.nom).includes(q))&&(!fut||new Date(x.date+'T00:00')>=today));
+  $('count').textContent=rows.length;
+  const list=$('list');list.innerHTML='';
+  if(!rows.length){list.innerHTML='<p class="empty">Aucune épreuve ne correspond à ces filtres.</p>';return;}
+  let cur=-1,ul;
+  rows.forEach(x=>{
+    const d=new Date(x.date+'T00:00');
+    if(d.getMonth()!==cur){cur=d.getMonth();const h=document.createElement('h2');h.className='month';h.textContent=MOIS[cur]+' '+d.getFullYear();list.appendChild(h);ul=document.createElement('ul');list.appendChild(ul);}
+    const past=d<today;
+    const li=document.createElement('li');if(past)li.className='past';
+    li.innerHTML=`<div class="date"><div class="d">${String(d.getDate()).padStart(2,'0')}</div><div class="w">${JOURS[d.getDay()]}</div></div>
+      <div class="info"><p class="nom"></p><div class="meta"><span class="chip${past?' past':''}"></span><span class="lieu"></span><span class="dep"></span></div></div>`;
+    li.querySelector('.nom').textContent=x.nom;
+    li.querySelector('.chip').textContent=past?x.cat+' · passée':x.cat;
+    li.querySelector('.lieu').textContent=x.lieu;
+    li.querySelector('.dep').textContent=x.dep;
+    ul.appendChild(li);
+  });
+}
+['f-dep','f-cat','f-future'].forEach(id=>$(id).addEventListener('change',()=>{save();render();}));
+$('f-q').addEventListener('input',render);
+$('reset').addEventListener('click',()=>{$('f-dep').value='';$('f-cat').value='';$('f-q').value='';$('f-future').checked=false;save();render();});
+load();render();
+</script>
+
+</body>
+</html>
